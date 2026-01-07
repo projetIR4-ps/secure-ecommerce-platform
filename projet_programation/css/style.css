@@ -1,0 +1,81 @@
+*{
+    box-sizing:border-box;
+}
+
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background:#f1f1f1;
+    margin:0;
+}
+
+header{
+    background:#000;
+    padding:10px 20px;
+    color:white;
+}
+
+nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    font-size:20px;
+    font-weight:bold;
+}
+
+button{
+    padding:8px 14px;
+    border-radius:6px;
+    border:1px solid #333;
+    background:white;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#ddd;
+}
+
+.page{
+    width:80%;
+    margin:auto;
+    margin-top:30px;
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+.hidden{
+    display:none;
+}
+
+#global-message{
+    width:80%;
+    margin:20px auto;
+    padding:12px;
+    border-radius:6px;
+}
+
+.success{
+    background:#c8ffcd;
+}
+
+.error{
+    background:#ffb3b3;
+}
+
+/* SERVICES CARDS */
+.service-card{
+    border:1px solid #ccc;
+    padding:15px;
+    margin:10px 0;
+    border-radius:8px;
+    background:#fafafa;
+}
+
+.service-title{
+    font-size:18px;
+    font-weight:bold;
+}

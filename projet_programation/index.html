@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Plateforme Sécurisée</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header>
+    <nav id="navbar">
+        <span class="logo">SecureShare</span>
+
+        <div id="nav-guest">
+            <button data-route="login">Login</button>
+            <button data-route="register">Register</button>
+        </div>
+
+        <div id="nav-user" style="display:none;">
+            <span id="user-info"></span>
+            <button data-route="services">Services</button>
+            <button data-route="order">Commander</button>
+            <button id="admin-btn" data-route="admin" style="display:none;">Admin</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+    </nav>
+</header>
+
+<main>
+
+<div id="global-message" class="hidden"></div>
+
+<section id="page-login" class="page">
+    <h2>Connexion</h2>
+    <form id="form-login">
+        <label>Email</label>
+        <input type="email" name="email" required>
+        <label>Mot de passe</label>
+        <input type="password" name="password" required minlength="8">
+        <button type="submit">Se connecter</button>
+    </form>
+</section>
+
+<section id="page-register" class="page hidden">
+    <h2>Créer un compte</h2>
+    <form id="form-register">
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Mot de passe</label>
+        <input type="password" name="password" required minlength="8">
+
+        <label>Rôle</label>
+        <select name="role" required>
+            <option value="client">Client</option>
+            <option value="fournisseur">Fournisseur</option>
+        </select>
+
+        <button type="submit">S'inscrire</button>
+    </form>
+</section>
+
+<section id="page-services" class="page hidden">
+    <h2>Services disponibles</h2>
+    <div id="services-list">Chargement...</div>
+</section>
+
+<section id="page-order" class="page hidden">
+    <h2>Passer une commande</h2>
+    <select id="orderService"></select>
+    <br><br>
+    <button id="btnOrder">Valider</button>
+    <p id="orderResult"></p>
+</section>
+
+<section id="page-admin" class="page hidden">
+    <h2>Tableau de bord Administrateur</h2>
+
+    <div class="admin-box">
+        <h3>Utilisateurs</h3>
+        <div id="admin-users"></div>
+    </div>
+
+    <div class="admin-box">
+        <h3>Services</h3>
+        <div id="admin-services"></div>
+    </div>
+
+    <div class="admin-box">
+        <h3>Commandes</h3>
+        <div id="admin-orders"></div>
+    </div>
+</section>
+
+</main>
+
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
