@@ -20,6 +20,9 @@ L’objectif principal est l’application des principes de sécurité tout au l
 ## 4. Architecture du système
 La plateforme est composée d’un frontend web, d’un backend exposant une API sécurisée et d’une base de données.
 Les échanges sont protégés et l’accès aux fonctionnalités dépend du rôle de l’utilisateur.
+Dans le cadre de ce projet académique, les données sont stockées temporairement en mémoire.
+Ce choix permet de se concentrer sur la sécurité applicative et la démonstration des contrôles de sécurité.
+Les mécanismes de sécurité resteraient identiques avec une base de données relationnelle persistante.
 
 ## 5. SDLC sécurisé
 La sécurité a été intégrée dès la phase de conception.
@@ -40,5 +43,6 @@ Des mesures de sécurité adaptées ont été mises en place pour limiter les ri
 ## 8. Technologies utilisées
 - Backend : API sécurisée
 - Frontend : application web
-- Base de données relationnelle
+- Stockage des données en mémoire (simulation de base de données relationnelle)
+
 - Outils : GitHub, Postman
