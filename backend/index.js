@@ -7,7 +7,7 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "20kb" })); // petit anti-DoS (payload trop gros)
+app.use(express.json({ limit: "20kb" }));
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -17,17 +17,11 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
-/* =========================
-   "DB" EN MÉMOIRE (SIMPLE)
-   ========================= */
-const users = [];    // { id, email, passwordHash, role }
-const products = []; // { id, name, price, description, sellerId }
-const orders = [];   // { id, productId, clientId, status }
+const users = [];
+const products = [];
+const orders = [];
 
-/* =========================
-   RATE LIMIT LOGIN (S + D)
-   ========================= */
-const loginAttempts = {}; // ip -> { count, firstTimeMs }
+const loginAttempts = {};
 
 function rateLimitLogin(req, res, next) {
   const ip = req.ip || "unknown";
@@ -37,14 +31,12 @@ function rateLimitLogin(req, res, next) {
     loginAttempts[ip] = { count: 0, firstTimeMs: now };
   }
 
-  // reset window every 60s
   if (now - loginAttempts[ip].firstTimeMs > 60_000) {
     loginAttempts[ip] = { count: 0, firstTimeMs: now };
   }
 
   loginAttempts[ip].count += 1;
 
-  // >10 attempts per minute -> block
   if (loginAttempts[ip].count > 10) {
     return res.status(429).json({ error: "Too many attempts" });
   }
@@ -52,16 +44,13 @@ function rateLimitLogin(req, res, next) {
   next();
 }
 
-/* =========================
-   AUTH + RBAC
-   ========================= */
 function auth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    req.user = jwt.verify(token, JWT_SECRET); // { id, role }
+    req.user = jwt.verify(token, JWT_SECRET);
     return next();
   } catch {
     return res.status(401).json({ error: "Unauthorized" });
@@ -76,26 +65,16 @@ function requireRole(...roles) {
   };
 }
 
-/* =========================
-   HELPERS
-   ========================= */
 function safeUser(u) {
-  return { id: u.id, email: u.email, role: u.role }; // pas de hash => anti fuite (I)
+  return { id: u.id, email: u.email, role: u.role };
 }
 
 function findUserByEmail(email) {
   return users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
 }
 
-/* =========================
-   ROUTES
-   ========================= */
 app.get("/health", (req, res) => res.json({ ok: true }));
 
-/**
- * DEV: créer un admin rapidement (pour tests vidéo).
- * IMPORTANT: en projet long, on éviterait cette route.
- */
 app.post("/dev/make-admin", async (req, res) => {
   const email = String(req.body.email || "").trim();
   const password = String(req.body.password || "");
@@ -103,19 +82,17 @@ app.post("/dev/make-admin", async (req, res) => {
   if (!email.includes("@") || password.length < 8) {
     return res.status(400).json({ error: "Invalid input" });
   }
-  if (findUserByEmail(email)) return res.status(409).json({ error: "User exists" });
+  if (findUserByEmail(email)) {
+    return res.status(409).json({ error: "User exists" });
+  }
 
   const passwordHash = await bcrypt.hash(password, 10);
   const admin = { id: users.length + 1, email, passwordHash, role: "admin" };
   users.push(admin);
 
-  return res.json({ message: "Admin created (dev)", admin: safeUser(admin) });
+  return res.json({ message: "Admin created", admin: safeUser(admin) });
 });
 
-/**
- * REGISTER
- * Anti EoP (E): on ignore tout champ "role" envoyé par le client.
- */
 app.post("/register", async (req, res) => {
   const email = String(req.body.email || "").trim();
   const password = String(req.body.password || "");
@@ -137,11 +114,6 @@ app.post("/register", async (req, res) => {
   return res.status(201).json({ message: "User registered", user: safeUser(user) });
 });
 
-/**
- * LOGIN
- * - rate limit (S + D)
- * - message générique (anti enumeration)
- */
 app.post("/login", rateLimitLogin, async (req, res) => {
   const email = String(req.body.email || "").trim();
   const password = String(req.body.password || "");
@@ -156,11 +128,6 @@ app.post("/login", rateLimitLogin, async (req, res) => {
   return res.json({ token, role: user.role });
 });
 
-/**
- * PRODUCTS
- * - GET public
- * - POST seller only
- */
 app.get("/products", (req, res) => {
   return res.json(products);
 });
@@ -186,11 +153,6 @@ app.post("/products", auth, requireRole("seller"), (req, res) => {
   return res.status(201).json({ message: "Product added", product });
 });
 
-/**
- * ORDERS
- * - client creates order
- * - seller updates status only if order relates to HIS product (ownership check => T)
- */
 app.post("/orders", auth, requireRole("client"), (req, res) => {
   const productId = Number(req.body.productId);
   if (!Number.isInteger(productId) || productId < 1) {
@@ -226,7 +188,6 @@ app.patch("/orders/:id/status", auth, requireRole("seller"), (req, res) => {
   const product = products.find(p => p.id === order.productId);
   if (!product) return res.status(404).json({ error: "Product not found" });
 
-  // Ownership check (seller ne modifie QUE ses commandes)
   if (product.sellerId !== req.user.id) {
     return res.status(403).json({ error: "Forbidden" });
   }
@@ -235,11 +196,6 @@ app.patch("/orders/:id/status", auth, requireRole("seller"), (req, res) => {
   return res.json({ message: "Order updated", order });
 });
 
-/**
- * ADMIN
- * - list users (sans passwordHash => I)
- * - promote user (E protection by controlling roles server-side)
- */
 app.get("/admin/users", auth, requireRole("admin"), (req, res) => {
   return res.json(users.map(safeUser));
 });
@@ -258,9 +214,6 @@ app.post("/admin/promote", auth, requireRole("admin"), (req, res) => {
   return res.json({ message: "User promoted", user: safeUser(user) });
 });
 
-/* =========================
-   START
-   ========================= */
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
 });
