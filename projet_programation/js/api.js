@@ -22,6 +22,7 @@ async function apiRegister(email,password,role){
 
 async function apiGetServices(){
     const r = await fetch(API+"/services")
+    if(!r.ok) throw new Error("Erreur services")
     return await r.json()
 }
 
@@ -38,10 +39,21 @@ async function apiCreateOrder(token,serviceId){
     return await r.json()
 }
 
+async function apiGetMyOrders(token){
+    const r = await fetch(API+"/orders/me",{
+        headers:{
+            "Authorization":"Bearer "+token
+        }
+    })
+    if(!r.ok) throw new Error("Erreur commandes")
+    return await r.json()
+}
+
 async function apiAdminGetUsers(token){
     const r = await fetch(API+"/admin/users",{
         headers:{ "Authorization":"Bearer "+token }
     })
+    if(!r.ok) throw new Error("Erreur admin users")
     return await r.json()
 }
 
@@ -49,6 +61,7 @@ async function apiAdminGetServices(token){
     const r = await fetch(API+"/admin/services",{
         headers:{ "Authorization":"Bearer "+token }
     })
+    if(!r.ok) throw new Error("Erreur admin services")
     return await r.json()
 }
 
@@ -56,5 +69,6 @@ async function apiAdminGetOrders(token){
     const r = await fetch(API+"/admin/orders",{
         headers:{ "Authorization":"Bearer "+token }
     })
+    if(!r.ok) throw new Error("Erreur admin orders")
     return await r.json()
 }

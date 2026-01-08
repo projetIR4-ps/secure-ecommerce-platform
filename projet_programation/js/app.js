@@ -23,13 +23,16 @@ document.addEventListener("DOMContentLoaded", ()=>{
     function updateNavbar(){
         const s = getUserSession()
         if(s){
-            navGuest.style.display="none"
-            navUser.style.display="flex"
+            navGuest.style.display = "none"
+            navUser.style.display = "flex"
             userInfo.textContent = s.email+" ("+s.role+")"
-            adminBtn.style.display = s.role==="admin" ? "inline-block" : "none"
+            adminBtn.style.display = s.role === "admin" ? "inline-block" : "none"
+            document.getElementById("page-login").classList.add("hidden")
+            document.getElementById("page-register").classList.add("hidden")
         }else{
-            navGuest.style.display="flex"
-            navUser.style.display="none"
+            navGuest.style.display = "flex"
+            navUser.style.display = "none"
+            showPage("login")
         }
     }
 
@@ -48,8 +51,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
             }
             showPage(route)
             if(route==="services") loadServices()
+            if(route==="order") loadOrder()
             if(route==="admin") loadAdmin()
-            if(route==="order") loadOrderServices()
         }
     })
 
@@ -68,6 +71,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
             updateNavbar()
             showMessage("Connexion réussie")
             showPage("services")
+            loadServices()
         }catch(e){
             showMessage("Erreur login","error")
         }
@@ -87,58 +91,131 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
     async function loadServices(){
         const box = document.getElementById("services-list")
-        box.textContent="Chargement..."
+        box.textContent = "Chargement..."
         try{
             const data = await apiGetServices()
-            box.innerHTML=""
+            box.innerHTML = ""
+            if(!data || data.length === 0){
+                box.textContent = "Aucun service"
+                return
+            }
             data.forEach(s=>{
-                let d=document.createElement("div")
-                d.className="service-card"
-                d.innerHTML=`<b>${s.name}</b><br>${s.description}`
+                let d = document.createElement("div")
+                d.className = "service-card"
+                d.innerHTML = `<b>${s.name}</b><br>${s.description || ""}`
                 box.appendChild(d)
             })
         }catch(e){
-            box.textContent="Erreur"
+            box.textContent = "Erreur chargement services"
         }
     }
 
-    async function loadOrderServices(){
+    async function loadOrder(){
         const select = document.getElementById("orderService")
         const res = document.getElementById("orderResult")
-        res.textContent=""
-        const data = await apiGetServices()
-        select.innerHTML=""
-        data.forEach(s=>{
-            let o=document.createElement("option")
-            o.value=s.id
-            o.textContent=s.name
-            select.appendChild(o)
-        })
+        const list = document.getElementById("my-orders-list")
+        res.textContent = ""
+        list.textContent = ""
+        try{
+            const services = await apiGetServices()
+            select.innerHTML = ""
+            services.forEach(s=>{
+                let o = document.createElement("option")
+                o.value = s.id
+                o.textContent = s.name
+                select.appendChild(o)
+            })
+        }catch(e){
+            res.textContent = "Erreur chargement services"
+            res.style.color = "red"
+            return
+        }
+        const s = getUserSession()
         document.getElementById("btnOrder").onclick = async()=>{
-            const s = getUserSession()
             try{
-                await apiCreateOrder(s.token,select.value)
-                res.textContent="Commande envoyée"
-                res.style.color="green"
+                await apiCreateOrder(s.token, select.value)
+                res.textContent = "Commande envoyée"
+                res.style.color = "green"
+                loadMyOrders()
             }catch(e){
-                res.textContent="Erreur commande"
-                res.style.color="red"
+                res.textContent = "Erreur commande"
+                res.style.color = "red"
             }
+        }
+        loadMyOrders()
+    }
+
+    async function loadMyOrders(){
+        const list = document.getElementById("my-orders-list")
+        const s = getUserSession()
+        if(!s){
+            list.textContent = ""
+            return
+        }
+        try{
+            const data = await apiGetMyOrders(s.token)
+            if(!data || data.length === 0){
+                list.textContent = "Aucune commande"
+                return
+            }
+            let html = "<table><tr><th>ID</th><th>Service</th><th>Status</th></tr>"
+            data.forEach(o=>{
+                html += "<tr><td>"+o.id+"</td><td>"+o.serviceId+"</td><td>"+(o.status || "")+"</td></tr>"
+            })
+            html += "</table>"
+            list.innerHTML = html
+        }catch(e){
+            list.textContent = "Erreur chargement commandes"
         }
     }
 
     async function loadAdmin(){
         const s = getUserSession()
+        const boxUsers = document.getElementById("admin-users")
+        const boxServices = document.getElementById("admin-services")
+        const boxOrders = document.getElementById("admin-orders")
+        boxUsers.textContent = "Chargement..."
+        boxServices.textContent = "Chargement..."
+        boxOrders.textContent = "Chargement..."
+        try{
+            const users = await apiAdminGetUsers(s.token)
+            const services = await apiAdminGetServices(s.token)
+            const orders = await apiAdminGetOrders(s.token)
 
-        const u = await apiAdminGetUsers(s.token)
-        const sv = await apiAdminGetServices(s.token)
-        const o = await apiAdminGetOrders(s.token)
+            let u = "<table><tr><th>Email</th><th>Rôle</th></tr>"
+            users.forEach(x=>{
+                u += "<tr><td>"+x.email+"</td><td>"+x.role+"</td></tr>"
+            })
+            u += "</table>"
+            boxUsers.innerHTML = u
 
-        document.getElementById("admin-users").innerHTML = JSON.stringify(u)
-        document.getElementById("admin-services").innerHTML = JSON.stringify(sv)
-        document.getElementById("admin-orders").innerHTML = JSON.stringify(o)
+            let sv = "<table><tr><th>ID</th><th>Nom</th><th>Description</th></tr>"
+            services.forEach(x=>{
+                sv += "<tr><td>"+x.id+"</td><td>"+x.name+"</td><td>"+(x.description || "")+"</td></tr>"
+            })
+            sv += "</table>"
+            boxServices.innerHTML = sv
+
+            let o = "<table><tr><th>ID</th><th>Service</th><th>Utilisateur</th><th>Status</th></tr>"
+            orders.forEach(x=>{
+                o += "<tr><td>"+x.id+"</td><td>"+x.serviceId+"</td><td>"+x.user+"</td><td>"+(x.status || "")+"</td></tr>"
+            })
+            o += "</table>"
+            boxOrders.innerHTML = o
+
+        }catch(e){
+            boxUsers.textContent = "Erreur admin"
+            boxServices.textContent = "Erreur admin"
+            boxOrders.textContent = "Erreur admin"
+        }
     }
 
     updateNavbar()
-    showPage("login")
+    const s = getUserSession()
+    if(s){
+        showPage("services")
+        loadServices()
+    }else{
+        showPage("login")
+    }
 })
